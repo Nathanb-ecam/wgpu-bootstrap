@@ -1,0 +1,25 @@
+{
+    "cSpell.words": [
+        "bytemuck",
+        "cgmath",
+        "Fifo",
+        "fovy",
+        "multisample",
+        "multisampled",
+        "multiview",
+        "OPENGL",
+        "RASTERIZATION",
+        "Renderable",
+        "repr",
+        "rustfmt",
+        "unclipped",
+        "Vulkan",
+        "webgl",
+        "wgpu",
+        "Wgsl",
+        "winit",
+        "Zeroable",
+        "zfar",
+        "znear"
+    ]
+}
