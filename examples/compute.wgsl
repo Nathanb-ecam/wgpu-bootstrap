@@ -14,6 +14,8 @@ struct ComputationData {
     stiffness:f32,
     mass:f32,
     damping_factor:f32,
+    workgroup_size:u32,
+    workgroup_numbers:u32,
 
 }
 
@@ -27,12 +29,14 @@ struct ComputationData {
 @group(0) @binding(0) var<storage, read_write> particlesData: array<Particle>;
 @group(1) @binding(0) var<uniform> data: ComputationData;
 
+//var<uniform> workgroup_size: i32 = data.workgroup_size as i32;
 
 
 
 
 
-@compute @workgroup_size(64, 1, 1) 
+// il faut que le 64 soit gérer automatiquement 
+@compute @workgroup_size(255, 1, 1) 
 fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     if (param.x >= u32(data.nb_instances)) {
           return;

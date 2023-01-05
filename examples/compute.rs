@@ -14,8 +14,9 @@ use wgpu_bootstrap::{
 // pour la sphere de collision
 const SPHERE_RADIUS:f32 = 25.0; // le facteur de réduction = rapport entre de taille de particule et taille de sphere de collision 
 // particules du tissus
-const PARTICLE_RADIUS:f32=1.5;
-const NUM_INSTANCES_PER_ROW: u32 = 10;//10
+const PARTICLE_RADIUS:f32=1.0;
+const NUM_INSTANCES_PER_ROW: u32 = 30;//10
+const NUMBER_PARTICULES: u32 = NUM_INSTANCES_PER_ROW*NUM_INSTANCES_PER_ROW;//10
 const INSTANCE_DISPLACEMENT: cgmath::Vector3<f32> = cgmath::Vector3::new(NUM_INSTANCES_PER_ROW as f32 * 1.5, 0.0, NUM_INSTANCES_PER_ROW as f32 * 1.5);//x:1.5, z:1.5
 
 
@@ -36,7 +37,9 @@ struct ComputeData {
     stiffness:f32,
     mass:f32,
     damping_factor:f32,
-
+    //pour définir le workgroup size et le dispatch workgroup number
+    wg_size:i32,
+    wg_numbers:u32,
 }
 
 struct MyApp {
@@ -56,6 +59,8 @@ struct MyApp {
     compute_data_bind_group: wgpu::BindGroup,
     nb_indices: usize,
     sph_nb_indices:usize,
+    workgroup_size:i32,
+    workgroup_numbers:u32,
 }
 
 fn scale_sphere(vertices: Vec<Vertex>, factor: f32) -> Vec<Vertex>{
@@ -76,7 +81,27 @@ fn get_particule_radius(vertices:&Vec<Vertex>)->Vec<f32>{
             radii.push(radius);
         }
         radii
+}
+
+fn get_workgroup_parameters(num_particles:u32,max_number:u32)->(i32,u32){
+    let  workgroup_size:i32;
+    let  num_workgroup:u32;
+    if num_particles%max_number==0{ // pour éviter de recréer un workgroup vide si on a un multiple de 255,
+        num_workgroup = (num_particles/max_number);
     }
+    else{
+        num_workgroup = (num_particles/max_number)+1;
+    }
+    if num_workgroup ==1{
+        workgroup_size = num_particles as i32;
+    }
+    else{
+        workgroup_size = max_number as i32;
+    }
+        
+    (workgroup_size,num_workgroup)
+}
+
 
 impl MyApp {
     fn new(context: &Context) -> Self {
@@ -107,13 +132,14 @@ impl MyApp {
             wgpu::PrimitiveTopology::TriangleList
         );
 
+        // on calule le nombre de bindgroups adapté et workgroup size
+        let (workgroup_size,workgroup_numbers) = get_workgroup_parameters(NUMBER_PARTICULES,255);
         // on crée les particules à partir d'icosphere
         let (mut vertices, indices) = icosphere(4);
         vertices = scale_sphere(vertices, PARTICLE_RADIUS);
         //let radius_vertices = get_particule_radius(&vertices);
         //print!("{:?}",radius_vertices);
-              
-
+                      
     
         let vertex_buffer = context.create_buffer(vertices.as_slice(), wgpu::BufferUsages::VERTEX);
         let index_buffer = context.create_buffer(indices.as_slice(), wgpu::BufferUsages::INDEX);
@@ -167,6 +193,8 @@ impl MyApp {
             stiffness:1.0,
             mass:1.0,
             damping_factor:1.0,
+            wg_size:workgroup_size,
+            wg_numbers:workgroup_numbers,
         };
         let compute_data_buffer = context.create_buffer(&[compute_data], wgpu::BufferUsages::UNIFORM);
         let compute_data_bind_group = context.create_bind_group(
@@ -222,6 +250,8 @@ impl MyApp {
             compute_data_bind_group,
             nb_indices: indices.len(),
             sph_nb_indices: sph_indices.len(),
+            workgroup_size,
+            workgroup_numbers,
 
         }
     }
@@ -272,6 +302,8 @@ impl Application for MyApp {
             stiffness:1.0,
             mass:1.0,
             damping_factor:1.0,
+            wg_size:self.workgroup_size,
+            wg_numbers:self.workgroup_numbers,
         }; 
         // &self.particles
         context.update_buffer(&self.compute_data_buffer, &[compute_data]);
@@ -285,7 +317,7 @@ impl Application for MyApp {
             compute_pass.set_pipeline(&self.compute_pipeline);
             compute_pass.set_bind_group(0, &self.compute_instances_bind_group, &[]);
             compute_pass.set_bind_group(1, &self.compute_data_bind_group, &[]);
-            compute_pass.dispatch_workgroups(2, 1, 1);
+            compute_pass.dispatch_workgroups(self.workgroup_numbers, 1, 1);//parametre x permet de créer x le workgroup dont la size est définie dans le wgsl workgroupsize(64) donc x fois 64 thread
         }
 
         computation.submit();
