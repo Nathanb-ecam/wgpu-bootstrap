@@ -37,9 +37,7 @@ struct ComputeData {
     stiffness:f32,
     mass:f32,
     damping_factor:f32,
-    //pour définir le workgroup size et le dispatch workgroup number
-    wg_size:i32,
-    wg_numbers:u32,
+
 }
 
 struct MyApp {
@@ -150,7 +148,8 @@ impl MyApp {
             let x = index % NUM_INSTANCES_PER_ROW;
             let z = index / NUM_INSTANCES_PER_ROW;
             let position = cgmath::Vector3 { x: x as f32 * 3.0, y: 35.0, z: z as f32 * 3.0 } - INSTANCE_DISPLACEMENT;//x :3.0 ,y :0, z :3.0
-
+            // println!("{:?}",position);
+        
             Particle {
                 position: position.into(), velocity:[0.0,0.0,0.0],
             }
@@ -193,8 +192,7 @@ impl MyApp {
             stiffness:1.0,
             mass:1.0,
             damping_factor:1.0,
-            wg_size:workgroup_size,
-            wg_numbers:workgroup_numbers,
+
         };
         let compute_data_buffer = context.create_buffer(&[compute_data], wgpu::BufferUsages::UNIFORM);
         let compute_data_bind_group = context.create_bind_group(
@@ -302,8 +300,7 @@ impl Application for MyApp {
             stiffness:1.0,
             mass:1.0,
             damping_factor:1.0,
-            wg_size:self.workgroup_size,
-            wg_numbers:self.workgroup_numbers,
+
         }; 
         // &self.particles
         context.update_buffer(&self.compute_data_buffer, &[compute_data]);
