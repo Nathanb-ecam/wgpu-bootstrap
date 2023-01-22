@@ -18,18 +18,20 @@ struct ComputationData {
 
 }
 
-//fn getDistance(x1:f32 ,y1:f32 ,x2:f32 , y2:f32 )->f32{
-  //  let dx = x2-x1;
-    //let dy = y2-y1;
-    //let result = sqrt(dx * dx + dy * dy);
-    //return result;
-//}
+
 
 @group(0) @binding(0) var<storage, read_write> particlesData: array<Particle>;
 @group(1) @binding(0) var<uniform> data: ComputationData;
 
-//var<uniform> workgroup_size: i32 = data.workgroup_size as i32;
 
+
+fn getDistance(x:f32 ,y:f32 ,z:f32)->f32{// MIEUX prendre un vec en parametre plutot que les trois coord
+    let x = (x-data.sx)*(x-data.sx); 
+    let y = (y-data.sy)*(y-data.sy);
+    let z = (z-data.sz)*(z-data.sz); 
+    let d = sqrt(x+y+z); 
+    return d;
+}
 
 
 
@@ -42,10 +44,7 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     }
 
     var particle = particlesData[param.x];
-    //particlesData[param.x].posx += data.delta_time * particle.vx;
-    //particlesData[param.x].posy += data.delta_time * particle.vy;
-    //particlesData[param.x].posz += data.delta_time * particle.vz;
-    //particlesData[param.x].vy += data.delta_time * - 9.81;
+
 
 
 
@@ -54,17 +53,13 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
 
 
     // distance entre particule et sphere
-    let x = (data.sx - particle.posx)*(data.sx - particle.posx); 
-    let y = (data.sy - particle.posy)*(data.sy - particle.posy);
-    let z = (data.sz - particle.posz)*(data.sz - particle.posz);
-    let d = sqrt(x+y+z); 
+    let d = getDistance(particle.posx,particle.posy,particle.posz); 
     // distance utile comme comparaison pour determiner la collision
 
     // distance entre deux particules 
 
 
     // calculs des forces
-    let inst_displ = 3.0;
     //F = -k*delta_l = -data.stiffness*delta_l
     let Rx = -data.stiffness * 0.0; //= Fx
     let Ry = -9.81 *data.mass ; //+ Fy
@@ -79,29 +74,23 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     particlesData[param.x].posy += data.delta_time * particle.vy;
     particlesData[param.x].posz += data.delta_time * particle.vz;
     
-    //float distance = getDistance(particle.posx,particle.posy,data.sx,data.sy); 
+
 
     
     // COLLISION
-    if (  d < (data.sphere_r+particle_radius )){ 
-        //particlesData[param.x].vy = -(particlesData[param.x].vy);
+    if (  d < (data.sphere_r+particle_radius)){ 
+
         particlesData[param.x].vy = 0.0;
-        //particlesData[param.x].posx = ;
-        //particlesData[param.x].posy = 0.0;
-        //particlesData[param.x].posz = 0.0;
-        //particlesData[param.x].vx += data.delta_time* 
-        //particlesData[param.x].vy +=
-        //particlesData[param.x].vz +=
+
+        // remettre le particule hors de la sphere
+        let vec_part = vec3(particlesData[param.x].posx,particlesData[param.x].posy,particlesData[param.x].posz);
+        let vec_norm = vec_part*(d/length(vec_part)); //pour obtenir un vecteur d'une norme d qui a la meme direction que vec_part
+        let result = vec_part - vec_norm;
+        particlesData[param.x].posx -= result.x;
+        particlesData[param.x].posy -= result.y;
+        particlesData[param.x].posz -= result.z;
 
 
-
-        // mettre a jour Vitesse/Position en fonction des forces 
-        //vx = vx + data.delta_time*(Rx/m)
-        //vy = vy + data.delta_time*(Ry/m)
-        //vz = vz + data.delta_time*(Rz/m)
-        //posx = posx + data.delta_time*vx
-        //posy = posy + data.delta_time*vy
-        //posz = posz + data.delta_time*vz
     }
 
 }
