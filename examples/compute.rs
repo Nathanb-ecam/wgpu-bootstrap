@@ -37,7 +37,6 @@ struct ComputeData {
     stiffness:f32,
     mass:f32,
     damping_factor:f32,
-
 }
 
 struct MyApp {
@@ -72,20 +71,11 @@ fn scale_sphere(vertices: Vec<Vertex>, factor: f32) -> Vec<Vertex>{
 }
 
 
-fn get_particule_radius(vertices:&Vec<Vertex>)->Vec<f32>{
-        let mut radii = Vec::new();
-        for vertex in vertices {
-            let radius = (vertex.position[0].powi(2) + vertex.position[1].powi(2) + vertex.position[2].powi(2)).sqrt();
-            radii.push(radius);
-        }
-        radii
-}
-
 fn get_workgroup_parameters(num_particles:u32,max_number:u32)->(i32,u32){
     let  workgroup_size:i32;
     let  num_workgroup:u32;
     if num_particles%max_number==0{ // pour éviter de recréer un workgroup vide si on a un multiple de 255,
-        num_workgroup = (num_particles/max_number);
+        num_workgroup = num_particles/max_number;
     }
     else{
         num_workgroup = (num_particles/max_number)+1;
@@ -100,6 +90,33 @@ fn get_workgroup_parameters(num_particles:u32,max_number:u32)->(i32,u32){
     (workgroup_size,num_workgroup)
 }
 
+// had to modify the particle struct to have its neighbors 
+fn compute_neighbor_springs(i:u32)->[u32;4] {// for the current particle
+    let len :u32= 100;
+    let side = (len as f32).sqrt() as u32;
+    let mut neighbors:[u32;4] = [std::u32::MAX,std::u32::MAX,std::u32::MAX,std::u32::MAX];
+    // Check west neighbor
+    if i % side > 0 {
+        let n_idx = i-1;
+        neighbors[0]= n_idx;
+    }
+    // Check north neighbor
+    if i >= side {
+        let n_idx = i-side;
+        neighbors[1]= n_idx;
+    }
+    // Check east neighbor
+    if i % side < side-1 {
+        let n_idx = i+1;
+        neighbors[2]= n_idx;
+    }
+    // Check south neighbor
+    if i < len-side {
+        let n_idx = i+side;
+        neighbors[3]= n_idx;
+    }
+    neighbors // OUTPUT EXAMPLE [0, 4294967295, 2, 11] for particle number two at index 1 
+}
 
 impl MyApp {
     fn new(context: &Context) -> Self {
@@ -130,13 +147,15 @@ impl MyApp {
             wgpu::PrimitiveTopology::TriangleList
         );
 
+
+        // PARTICLES 
         // on calule le nombre de bindgroups adapté et workgroup size
         let (workgroup_size,workgroup_numbers) = get_workgroup_parameters(NUMBER_PARTICULES,255);
         // on crée les particules à partir d'icosphere
         let (mut vertices, indices) = icosphere(4);
         vertices = scale_sphere(vertices, PARTICLE_RADIUS);
         //let radius_vertices = get_particule_radius(&vertices);
-        //print!("{:?}",radius_vertices);
+        //print!("{:?}",vertices);
                       
     
         let vertex_buffer = context.create_buffer(vertices.as_slice(), wgpu::BufferUsages::VERTEX);
@@ -149,17 +168,20 @@ impl MyApp {
             let z = index / NUM_INSTANCES_PER_ROW;
             let position = cgmath::Vector3 { x: x as f32 * 3.0, y: 35.0, z: z as f32 * 3.0 } - INSTANCE_DISPLACEMENT;//x :3.0 ,y :0, z :3.0
             // println!("{:?}",position);
-        
+            let neighbors = compute_neighbor_springs(index);
+            
             Particle {
-                position: position.into(), velocity:[0.0,0.0,0.0],
+                position: position.into(), velocity:[0.0,0.0,0.0],neighbors:neighbors,
             }
             
+            
+
         }).collect::<Vec<_>>();
 
 
+
         
         
-        //let particle_data = particles.iter().map(Particle::desc).collect::<Vec<_>>();
         // il ne faut pas convertir les particles pour pouvoir les bufferiser
         let particle_buffer = context.create_buffer(particles.as_slice(), wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::STORAGE);
         
@@ -207,7 +229,7 @@ impl MyApp {
         );
 
 
-        // pour la sphere avec laquelle on veut gérer des collisions
+        //SPHERE OF COLLISION 
 
         let sphere_pipeline = context.create_render_pipeline(
             "Render Pipeline",
@@ -302,7 +324,7 @@ impl Application for MyApp {
             damping_factor:1.0,
 
         }; 
-        // &self.particles
+
         context.update_buffer(&self.compute_data_buffer, &[compute_data]);
         
 
@@ -313,6 +335,7 @@ impl Application for MyApp {
 
             compute_pass.set_pipeline(&self.compute_pipeline);
             compute_pass.set_bind_group(0, &self.compute_instances_bind_group, &[]);
+            compute_pass.set_bind_group(1, &self.compute_data_bind_group, &[]);
             compute_pass.set_bind_group(1, &self.compute_data_bind_group, &[]);
             compute_pass.dispatch_workgroups(self.workgroup_numbers, 1, 1);//parametre x permet de créer x le workgroup dont la size est définie dans le wgsl workgroupsize(64) donc x fois 64 thread
         }
