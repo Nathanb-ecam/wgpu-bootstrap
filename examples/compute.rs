@@ -167,7 +167,7 @@ impl MyApp {
             let x = index % NUM_INSTANCES_PER_ROW;
             let z = index / NUM_INSTANCES_PER_ROW;
             let position = cgmath::Vector3 { x: x as f32 * 3.0, y: 35.0, z: z as f32 * 3.0 } - INSTANCE_DISPLACEMENT;//x :3.0 ,y :0, z :3.0
-            // println!("{:?}",position);
+            println!("{:?}",position);
             let neighbors = compute_neighbor_springs(index);
             
             Particle {

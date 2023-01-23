@@ -45,28 +45,32 @@ fn getDistanceToSphere(x:f32 ,y:f32 ,z:f32)->f32{// MIEUX prendre un vec en para
     return d;
 }
 
-fn getDistance(i:u32,n_idx:u32)-> DeltaL{ // the distance between two particles
+fn getDisplacement(i:u32,n_idx:u32)-> DeltaL{ // the distance between two particles
     var res : DeltaL; 
     var dx = particlesData[i].posx - particlesData[n_idx].posx;
     var dy = particlesData[i].posy - particlesData[n_idx].posy;
     var dz = particlesData[i].posz - particlesData[n_idx].posz;
-    if dx == 3.0{
+    if (dx == 3.0 || dx == -3.0){
         dx = 0.0;
     }
-    // if dy == 0.0{
-    //     res.dy = 0.0;
-    // }
-    if dz == 3.0{
+    else{
+        dx -= 3.0;
+    }
+    if (dz == 3.0 || dz == -3.0){
         dz = 0.0;
     }
-    res.dx =dx;
-    res.dy =dy;
-    res.dz =dz;
+    else{
+        dz -= 3.0;
+    }
+    
+    res.dx =(dx);
+    res.dy =(dy);
+    res.dz =(dz);
     return res;
 }
 
 fn calculate_force(i:u32,n_idx:u32)->Force{
-    let deltaL = getDistance(i,n_idx);
+    let deltaL = getDisplacement(i,n_idx);
     var force : Force;
     force.fx = -data.stiffness * deltaL.dx; //= Fx
     force.fy = (-9.81 *data.mass) + (data.stiffness * deltaL.dy) ; //+ Fy
@@ -104,22 +108,24 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
 
 
     //west
-    let force = calculate_force(i,particle.n_west);
-    rx += force.fx;
-    ry += force.fy;
-    rz += force.fz;
-    let force = calculate_force(i,particle.n_north);
-    rx += force.fx;
-    ry += force.fy;
-    rz += force.fz;
-    let force = calculate_force(i,particle.n_east);
-    rx += force.fx;
-    ry += force.fy;
-    rz += force.fz;
-    let force = calculate_force(i,particle.n_south);
-    rx += force.fx;
-    ry += force.fy;
-    rz += force.fz;
+    let w = calculate_force(i,particle.n_west);
+    rx += w.fx;
+    ry += w.fy;
+    rz += w.fz;
+    let n = calculate_force(i,particle.n_north);
+    rx += n.fx;
+    ry += n.fy;
+    rz += n.fz;
+    let e = calculate_force(i,particle.n_east);
+    rx += e.fx;
+    ry += e.fy;
+    rz += e.fz;
+    let s = calculate_force(i,particle.n_south);
+    rx += s.fx;
+    ry += s.fy;
+    rz += s.fz;
+
+
     // if (particle.n_west != 1000){
     //     let force = calculate_force(i,particle.n_west);
     //     rx += force.fx;
