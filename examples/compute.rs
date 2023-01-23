@@ -94,7 +94,7 @@ fn get_workgroup_parameters(num_particles:u32,max_number:u32)->(i32,u32){
 fn compute_neighbor_springs(i:u32)->[u32;4] {// for the current particle
     let len :u32= 100;
     let side = (len as f32).sqrt() as u32;
-    let mut neighbors:[u32;4] = [std::u32::MAX,std::u32::MAX,std::u32::MAX,std::u32::MAX];
+    let mut neighbors:[u32;4] = [1000,1000,1000,1000];
     // Check west neighbor
     if i % side > 0 {
         let n_idx = i-1;
@@ -212,7 +212,7 @@ impl MyApp {
             sz:0.0,
             sphere_r:SPHERE_RADIUS,//1
             stiffness:1.0,
-            mass:1.0,
+            mass:10.0,
             damping_factor:1.0,
 
         };
@@ -320,7 +320,7 @@ impl Application for MyApp {
             sz:0.0,
             sphere_r:SPHERE_RADIUS,
             stiffness:1.0,
-            mass:1.0,
+            mass:10.0,
             damping_factor:1.0,
 
         }; 
