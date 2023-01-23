@@ -1,28 +1,13 @@
-# WGPU Bootstrap
+# GPU Computing project 
 
-This project is designed for educational purposes. It is probably not suitable for a production application.
-The goal is to reduce the boilerplate needed to create a new WebGPU project.
+Cloth collision with a sphere 
 
-## Usage
+## Simulation
 
-Add the library to your `cargo.toml`. Use the `tag` key to specify the version.
-
-```toml
-[dependencies]
-wgpu-bootstrap = { git = "https://github.com/qlurkin/wgpu-bootstrap", tag = "v0.1.22" }
-bytemuck = { version = "1.4", features = [ "derive" ] }
-```
-
-## Example
-
-You can find an example of project in [the example directory](https://github.com/qlurkin/wgpu-bootstrap/tree/main/examples)
-
-You can run the example with
+You can run the simulation with
 
 ```shell
-cargo run --example simple_texture
+cargo run --example compute
 ```
 
-## Credits
 
-Heavily inspired by the ["Learn Wgpu" tutorial](https://sotrh.github.io/learn-wgpu)
