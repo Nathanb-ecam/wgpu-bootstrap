@@ -35,7 +35,7 @@ struct Force {
 @group(0) @binding(0) var<storage, read_write> particlesData: array<Particle>;
 @group(1) @binding(0) var<uniform> data: ComputationData;
 
-
+// REMARQUES :  travailler avec des vec3 -> fonctions préconçues : length, normalize, reflect,...
 
 fn getDistanceToSphere(x:f32 ,y:f32 ,z:f32)->f32{// MIEUX prendre un vec en parametre plutot que les trois coord
     let x = (x-data.sx)*(x-data.sx); 
@@ -44,12 +44,21 @@ fn getDistanceToSphere(x:f32 ,y:f32 ,z:f32)->f32{// MIEUX prendre un vec en para
     let d = sqrt(x+y+z); 
     return d;
 }
+fn getDistanceBetweenParticles(part1:vec3<f32> ,part2:vec3<f32>)->f32{// MIEUX prendre un vec en parametre plutot que les trois coord
+    let x = (part1.x-part2.x)*(part1.x-part2.x); 
+    let y = (part1.y-part2.y)*(part1.y-part2.y);
+    let z = (part1.z-part2.z)*(part1.z-part2.z); 
+    let d = sqrt(x+y+z); 
+    return d;
+}
 
 fn getDisplacement(i:u32,n_idx:u32)-> DeltaL{ // the distance between two particles
     var res : DeltaL; 
-    var dx = particlesData[i].posx - particlesData[n_idx].posx;
-    var dy = particlesData[i].posy - particlesData[n_idx].posy;
-    var dz = particlesData[i].posz - particlesData[n_idx].posz;
+    //dl
+    //var dl = getDistanceBetweenParticles(particlesData[param.x],particlesData[param.x])
+    var dx = particlesData[n_idx].posx - particlesData[i].posx;
+    var dy = particlesData[n_idx].posy - particlesData[i].posy;
+    var dz = particlesData[n_idx].posz - particlesData[i].posz;
     if (dx == 3.0 || dx == -3.0){
         dx = 0.0;
     }
@@ -63,13 +72,14 @@ fn getDisplacement(i:u32,n_idx:u32)-> DeltaL{ // the distance between two partic
         dz -= 3.0;
     }
     
-    res.dx =(dx);
-    res.dy =(dy);
-    res.dz =(dz);
+    res.dx =dx;
+    res.dy =dy;
+    res.dz =dz;
     return res;
 }
 
 fn calculate_force(i:u32,n_idx:u32)->Force{
+    // REMARQUES : force ne dépend pas de chaque composante dx, dy, dz mais de l'allongement général
     let deltaL = getDisplacement(i,n_idx);
     var force : Force;
     force.fx = -data.stiffness * deltaL.dx; //= Fx
@@ -95,9 +105,7 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
 
 
     //MARCHE
-    // let rx = -data.stiffness * 0.0; //= Fx
-    // let ry = -9.81 *data.mass ; //+ Fy
-    // let rz = -data.stiffness*0.0;
+
 
 
     var rx = 0.0;
@@ -105,57 +113,46 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     var rz = 0.0;
     // setting current neighbors
 
+    let neighbors = vec4(particlesData[param.x].n_west,particlesData[param.x].n_north,particlesData[param.x].n_east,particlesData[param.x].n_south);
+    
+
+    let v:u32 = 1000u;
+
+    // REMARQUES :itérer sur les particules voisines
+    // for(var i = 0)
+
+    if (particle.n_west != v){
+        let force = calculate_force(i,particle.n_west);
+        rx += force.fx;
+        ry += force.fy;
+        rz += force.fz;
+    } 
+    //north
+    if (particle.n_north != v){
+        let force = calculate_force(i,particle.n_north);
+        rx += force.fx;
+        ry += force.fy;
+        rz += force.fz;
+    } 
+    //east
+    if (particle.n_east != v){
+        let force = calculate_force(i,particle.n_east);
+        rx += force.fx;
+        ry += force.fy;
+        rz += force.fz;
+    } 
+    //south
+    if (particle.n_south != v){
+        let force = calculate_force(i,particle.n_south);
+        rx += force.fx;
+        ry += force.fy;
+        rz += force.fz;
+    } 
 
 
-    //west
-    let w = calculate_force(i,particle.n_west);
-    rx += w.fx;
-    ry += w.fy;
-    rz += w.fz;
-    let n = calculate_force(i,particle.n_north);
-    rx += n.fx;
-    ry += n.fy;
-    rz += n.fz;
-    let e = calculate_force(i,particle.n_east);
-    rx += e.fx;
-    ry += e.fy;
-    rz += e.fz;
-    let s = calculate_force(i,particle.n_south);
-    rx += s.fx;
-    ry += s.fy;
-    rz += s.fz;
-
-
-    // if (particle.n_west != 1000){
-    //     let force = calculate_force(i,particle.n_west);
-    //     rx += force.fx;
-    //     ry += force.fy;
-    //     rz += force.fz;
-    // } 
-    // //north
-    // if (particle.n_north != 1000){
-    //     let force = calculate_force(i,particle.n_north);
-    //     rx += force.fx;
-    //     ry += force.fy;
-    //     rz += force.fz;
-    // } 
-    // //east
-    // if (particle.n_east != 1000){
-    //     let force = calculate_force(i,particle.n_east);
-    //     rx += force.fx;
-    //     ry += force.fy;
-    //     rz += force.fz;
-    // } 
-    // //south
-    // if (particle.n_south != 1000){
-    //     let force = calculate_force(i,particle.n_south);
-    //     rx += force.fx;
-    //     ry += force.fy;
-    //     rz += force.fz;
-    // } 
-
-
-
+    // let rx = -data.stiffness * 0.0; //= Fx
+    // let ry = -9.81 *data.mass ; //+ Fy
+    // let rz = -data.stiffness*0.0;
 
 
     // on met a jour les vitesses et positions des particules 
@@ -174,12 +171,18 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     let d = getDistanceToSphere(particle.posx,particle.posy,particle.posz); 
     let delt = length(vec3(particlesData[param.x].vx,particlesData[param.x].vy,particlesData[param.x].vz));
 
-    // COLLISION
-    if (  d < (data.sphere_r+particle_radius+data.delta_time*delt)){ 
 
-        particlesData[param.x].vx = 0.0;
-        particlesData[param.x].vy = 0.0;
-        particlesData[param.x].vz = 0.0;
+
+    // COLLISION
+    var sphere_center = vec3<f32>(data.sx,data.sy,data.sz);
+    var posn = vec3<f32>(particlesData[param.x].posx,particlesData[param.x].posy,particlesData[param.x].posz);
+    var velocity = vec3<f32>(particlesData[param.x].vx,particlesData[param.x].vy,particlesData[param.x].vz);
+    var d_origin = posn-sphere_center;
+    if (  d < (data.sphere_r+particle_radius)){ 
+
+        // particlesData[param.x].vx = 0.0;
+        // particlesData[param.x].vy = 0.0;
+        // particlesData[param.x].vz = 0.0;
 
         // remettre le particule hors de la sphere
         // let vec_part = vec3(particlesData[param.x].posx,particlesData[param.x].posy,particlesData[param.x].posz);
@@ -189,6 +192,18 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
         // particlesData[param.x].posy -= result.y;
         // particlesData[param.x].posz -= result.z;
 
+        var dir = normalize(d_origin);
+        // on applique cette normale sur le vecteur vitesse
+        velocity = reflect(velocity,dir);
+        posn = sphere_center + dir * (data.sphere_r*1.03);//1%
+
+        particlesData[param.x].posx = posn.x;
+        particlesData[param.x].posy = posn.y;
+        particlesData[param.x].posz = posn.z;
+
+        particlesData[param.x].vx = velocity.x*0.9;
+        particlesData[param.x].vy = velocity.y*0.9;
+        particlesData[param.x].vz = velocity.z*0.9;
 
     }
 

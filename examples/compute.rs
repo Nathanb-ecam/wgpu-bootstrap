@@ -92,7 +92,7 @@ fn get_workgroup_parameters(num_particles:u32,max_number:u32)->(i32,u32){
 
 // had to modify the particle struct to have its neighbors 
 fn compute_neighbor_springs(i:u32)->[u32;4] {// for the current particle
-    let len :u32= 100;
+    let len :u32= NUMBER_PARTICULES;
     let side = (len as f32).sqrt() as u32;
     let mut neighbors:[u32;4] = [1000,1000,1000,1000];
     // Check west neighbor
@@ -129,7 +129,7 @@ impl MyApp {
             target: (0.0, 30.0, 0.0).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: context.get_aspect_ratio(),
-            fovy: 65.0,//45
+            fovy: 120.0,//45
             znear: 0.1,
             zfar: 100.0,
         };
@@ -167,8 +167,8 @@ impl MyApp {
             let x = index % NUM_INSTANCES_PER_ROW;
             let z = index / NUM_INSTANCES_PER_ROW;
             let position = cgmath::Vector3 { x: x as f32 * 3.0, y: 35.0, z: z as f32 * 3.0 } - INSTANCE_DISPLACEMENT;//x :3.0 ,y :0, z :3.0
-            println!("{:?}",position);
             let neighbors = compute_neighbor_springs(index);
+            println!("{:?}{}{:?}",position,index,neighbors);
             
             Particle {
                 position: position.into(), velocity:[0.0,0.0,0.0],neighbors:neighbors,
@@ -320,7 +320,7 @@ impl Application for MyApp {
             sz:0.0,
             sphere_r:SPHERE_RADIUS,
             stiffness:1.0,
-            mass:10.0,
+            mass:20.0,//1
             damping_factor:1.0,
 
         }; 
