@@ -12,7 +12,7 @@ use wgpu_bootstrap::{
     wgpu,
 };
 // pour la sphere de collision
-const SPHERE_RADIUS:f32 = 25.0; // le facteur de réduction = rapport entre de taille de particule et taille de sphere de collision 
+const SPHERE_RADIUS:f32 = 20.0; // le facteur de réduction = rapport entre de taille de particule et taille de sphere de collision 
 // particules du tissus
 const PARTICLE_RADIUS:f32=1.0;
 const NUM_INSTANCES_PER_ROW: u32 = 30;//10
@@ -91,31 +91,52 @@ fn get_workgroup_parameters(num_particles:u32,max_number:u32)->(i32,u32){
 }
 
 // had to modify the particle struct to have its neighbors 
-fn compute_neighbor_springs(i:u32)->[u32;4] {// for the current particle
+fn compute_neighbor_springs(i:u32)->[u32;8] {// for the current particle
     let len :u32= NUMBER_PARTICULES;
     let side = (len as f32).sqrt() as u32;
-    let mut neighbors:[u32;4] = [1000,1000,1000,1000];
+    let mut neighbors:[u32;8] = [10000,10000,10000,10000,10000,10000,10000,10000];
+
     // Check west neighbor
     if i % side > 0 {
         let n_idx = i-1;
         neighbors[0]= n_idx;
     }
+    // Check north-west neighbor (north index -1)
+    // if i >= side {
+    //     let n_idx = i-side;
+    //     neighbors[1]= n_idx -1;
+    // }
     // Check north neighbor
     if i >= side {
         let n_idx = i-side;
-        neighbors[1]= n_idx;
+        neighbors[2]= n_idx;
     }
+    // Check north-east neighbor (north index +1)
+    // if i >= side {
+    //     let n_idx = i-side;
+    //     neighbors[3]= n_idx+1;
+    // }
     // Check east neighbor
     if i % side < side-1 {
         let n_idx = i+1;
-        neighbors[2]= n_idx;
+        neighbors[4]= n_idx;
     }
+    // Check south-east neighbor
+    // if i < len-side {
+    //     let n_idx = i+side;
+    //     neighbors[5]= n_idx+1;
+    // }
     // Check south neighbor
     if i < len-side {
         let n_idx = i+side;
-        neighbors[3]= n_idx;
+        neighbors[6]= n_idx;
     }
-    neighbors // OUTPUT EXAMPLE [0, 4294967295, 2, 11] for particle number two at index 1 
+    // Check south-west neighbor
+    // if i < len-side {
+    //     let n_idx = i+side;
+    //     neighbors[7]= n_idx-1;
+    // }
+    neighbors
 }
 
 impl MyApp {
@@ -168,7 +189,7 @@ impl MyApp {
             let z = index / NUM_INSTANCES_PER_ROW;
             let position = cgmath::Vector3 { x: x as f32 * 3.0, y: 35.0, z: z as f32 * 3.0 } - INSTANCE_DISPLACEMENT;//x :3.0 ,y :0, z :3.0
             let neighbors = compute_neighbor_springs(index);
-            println!("{:?}{}{:?}",position,index,neighbors);
+            // println!("{:?}{}{:?}",position,index,neighbors);
             
             Particle {
                 position: position.into(), velocity:[0.0,0.0,0.0],neighbors:neighbors,
@@ -319,8 +340,8 @@ impl Application for MyApp {
             sy:0.0,
             sz:0.0,
             sphere_r:SPHERE_RADIUS,
-            stiffness:1.0,
-            mass:20.0,//1
+            stiffness:80.0,
+            mass:1.0,//1
             damping_factor:1.0,
 
         }; 

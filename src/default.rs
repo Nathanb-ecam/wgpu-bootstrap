@@ -138,7 +138,7 @@ impl InstanceRaw {
 pub struct Particle {
     pub position: [f32; 3],
     pub velocity: [f32; 3],
-    pub neighbors: [u32;4],
+    pub neighbors: [u32;8],
 }
 
 impl Particle {
