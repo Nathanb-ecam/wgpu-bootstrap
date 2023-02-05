@@ -12,7 +12,7 @@ use wgpu_bootstrap::{
     wgpu,
 };
 // pour la sphere de collision
-const SPHERE_RADIUS:f32 = 20.0; // le facteur de réduction = rapport entre de taille de particule et taille de sphere de collision 
+const SPHERE_RADIUS:f32 = 25.0; // le facteur de réduction = rapport entre de taille de particule et taille de sphere de collision 
 // particules du tissus
 const PARTICLE_RADIUS:f32=1.0;
 const NUM_INSTANCES_PER_ROW: u32 = 30;//10
@@ -342,7 +342,7 @@ impl Application for MyApp {
             sphere_r:SPHERE_RADIUS,
             stiffness:80.0,
             mass:1.0,//1
-            damping_factor:1.0,
+            damping_factor:0.2,
 
         }; 
 

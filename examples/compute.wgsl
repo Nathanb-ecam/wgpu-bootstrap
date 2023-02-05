@@ -80,9 +80,9 @@ fn process_neighbor(n_index: u32, c_index: u32) -> vec3<f32> {
     let current = particlesData[c_index];
     let part = vec3(current.posx,current.posy,current.posz);
     let neigh = vec3(neighbor.posx,neighbor.posy,neighbor.posz);
-    let dl = length(neigh - part);
-    let scalar_f = data.stiffness * (dl- 3.0);
-    let dir = (neigh-part)/dl;
+    let l = length(neigh - part);
+    let scalar_f = data.stiffness * (l- 3.0);
+    let dir = normalize(neigh-part);
     let force = scalar_f * dir;
     return force;
 }
@@ -95,7 +95,7 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     var current = particlesData[param.x];    // references the current particle
     let current_index = param.x;
     let particle_radius = data.particle_radius;
-
+    let particle_speed = vec3(current.vx,current.vy,current.vz);
 
     let neighbors_indexes:array<u32,4> = array<u32,4>(particlesData[param.x].n_west,particlesData[param.x].n_north,particlesData[param.x].n_east,particlesData[param.x].n_south);
     
@@ -127,6 +127,9 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     if (particlesData[param.x].n_south != 10000u){
         resultant += process_neighbor(particlesData[param.x].n_south, current_index);
     }
+    // damping facor
+    resultant += (-data.damping_factor * particle_speed);
+
     resultant += vec3(0.0,-9.81,0.0);
 
 
@@ -136,6 +139,7 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
 
 
     // on met a jour les vitesses et positions des particules 
+
     particlesData[param.x].vx = particlesData[param.x].vx + data.delta_time*(resultant.x/data.mass);
     particlesData[param.x].vy = particlesData[param.x].vy + data.delta_time*(resultant.y/data.mass);
     //particlesData[0].vy = particlesData[0].vy + data.delta_time*(9.81);
@@ -155,14 +159,14 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
 
     // COLLISION
     var sphere_center = vec3<f32>(data.sx,data.sy,data.sz);
-    var posn = vec3<f32>(particlesData[param.x].posx,particlesData[param.x].posy,particlesData[param.x].posz);
-    var velocity = vec3<f32>(particlesData[param.x].vx,particlesData[param.x].vy,particlesData[param.x].vz);
+    var posn = vec3<f32>(current.posx,current.posy,current.posz);
+    var velocity = vec3<f32>(current.vx,current.vy,current.vz);
     var d_origin = posn-sphere_center;
     if (  d < (data.sphere_r+particle_radius)){ 
         var dir = normalize(d_origin);
         // on applique cette normale sur le vecteur vitesse
-        velocity = reflect(velocity,dir);
-        posn = sphere_center + dir * (data.sphere_r*1.03);//1%
+        // velocity = reflect(velocity,dir);
+        posn = sphere_center + dir * (data.sphere_r*1.01);//3%
 
         particlesData[param.x].posx = posn.x;
         particlesData[param.x].posy = posn.y;
