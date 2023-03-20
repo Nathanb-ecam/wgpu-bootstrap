@@ -95,7 +95,7 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
     var current = particlesData[param.x];    // references the current particle
     let current_index = param.x;
     let particle_radius = data.particle_radius;
-    let particle_speed = vec3(current.vx,current.vy,current.vz);
+
 
     let neighbors_indexes:array<u32,4> = array<u32,4>(particlesData[param.x].n_west,particlesData[param.x].n_north,particlesData[param.x].n_east,particlesData[param.x].n_south);
     
@@ -116,20 +116,18 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
         //let force = scalar_f * dir;
     //}
     if (particlesData[param.x].n_west != 10000u){
-        resultant += process_neighbor(particlesData[param.x].n_west, current_index);
+        resultant += process_neighbor(particlesData[param.x].n_west, param.x);
     }
     if (particlesData[param.x].n_north != 10000u){
-        resultant += process_neighbor(particlesData[param.x].n_north, current_index);
+        resultant += process_neighbor(particlesData[param.x].n_north, param.x);
     }
     if (particlesData[param.x].n_east != 10000u){
-        resultant += process_neighbor(particlesData[param.x].n_east, current_index);
+        resultant += process_neighbor(particlesData[param.x].n_east, param.x);
     }
     if (particlesData[param.x].n_south != 10000u){
-        resultant += process_neighbor(particlesData[param.x].n_south, current_index);
+        resultant += process_neighbor(particlesData[param.x].n_south, param.x);
     }
-    // damping facor
-    resultant += (-data.damping_factor * particle_speed);
-
+    resultant += data.damping_factor * vec3(particlesData[param.x].vx,particlesData[param.x].vy,particlesData[param.x].vz);
     resultant += vec3(0.0,-9.81,0.0);
 
 
@@ -139,43 +137,41 @@ fn main(@builtin(global_invocation_id) param: vec3<u32>) {
 
 
     // on met a jour les vitesses et positions des particules 
-
     particlesData[param.x].vx = particlesData[param.x].vx + data.delta_time*(resultant.x/data.mass);
     particlesData[param.x].vy = particlesData[param.x].vy + data.delta_time*(resultant.y/data.mass);
     //particlesData[0].vy = particlesData[0].vy + data.delta_time*(9.81);
     particlesData[param.x].vz = particlesData[param.x].vz + data.delta_time*(resultant.z/data.mass);
 
-    particlesData[param.x].posx += data.delta_time * current.vx;
-    particlesData[param.x].posy += data.delta_time * current.vy;
-    particlesData[param.x].posz += data.delta_time * current.vz;
+    particlesData[param.x].posx += data.delta_time * particlesData[param.x].vx;
+    particlesData[param.x].posy += data.delta_time * particlesData[param.x].vy;
+    particlesData[param.x].posz += data.delta_time * particlesData[param.x].vz;
     
 
 
     // distance entre particule et sphere
-    let d = getDistanceToSphere(current.posx,current.posy,current.posz); 
-    let delt = length(vec3(particlesData[param.x].vx,particlesData[param.x].vy,particlesData[param.x].vz));
+    let d = getDistanceToSphere(particlesData[param.x].posx,particlesData[param.x].posy,particlesData[param.x].posz); 
+    // let delt = length(vec3(particlesData[param.x].vx,particlesData[param.x].vy,particlesData[param.x].vz));
 
 
 
     // COLLISION
     var sphere_center = vec3<f32>(data.sx,data.sy,data.sz);
-    var posn = vec3<f32>(current.posx,current.posy,current.posz);
-    var velocity = vec3<f32>(current.vx,current.vy,current.vz);
+    var posn = vec3<f32>(particlesData[param.x].posx,particlesData[param.x].posy,particlesData[param.x].posz);
+    var velocity = vec3<f32>(particlesData[param.x].vx,particlesData[param.x].vy,particlesData[param.x].vz);
     var d_origin = posn-sphere_center;
-    if (  d < (data.sphere_r+particle_radius)){ 
+    if (  d < (data.sphere_r)){ 
         var dir = normalize(d_origin);
         // on applique cette normale sur le vecteur vitesse
-        // velocity = reflect(velocity,dir);
-        posn = sphere_center + dir * (data.sphere_r*1.01);//3%
+        velocity = reflect(velocity,dir);
+        posn = sphere_center + dir * (data.sphere_r*1.01);//1%
 
         particlesData[param.x].posx = posn.x;
         particlesData[param.x].posy = posn.y;
         particlesData[param.x].posz = posn.z;
 
-        particlesData[param.x].vx = velocity.x*0.9;
-        particlesData[param.x].vy = velocity.y*0.9;
-        particlesData[param.x].vz = velocity.z*0.9;
-
+        particlesData[param.x].vx = 0.0;
+        particlesData[param.x].vy = 0.0;
+        particlesData[param.x].vz = 0.0;
     }
 
 }

@@ -15,7 +15,7 @@ use wgpu_bootstrap::{
 const SPHERE_RADIUS:f32 = 25.0; // le facteur de réduction = rapport entre de taille de particule et taille de sphere de collision 
 // particules du tissus
 const PARTICLE_RADIUS:f32=1.0;
-const NUM_INSTANCES_PER_ROW: u32 = 30;//10
+const NUM_INSTANCES_PER_ROW: u32 = 20;//10
 const NUMBER_PARTICULES: u32 = NUM_INSTANCES_PER_ROW*NUM_INSTANCES_PER_ROW;//10
 const INSTANCE_DISPLACEMENT: cgmath::Vector3<f32> = cgmath::Vector3::new(NUM_INSTANCES_PER_ROW as f32 * 1.5, 0.0, NUM_INSTANCES_PER_ROW as f32 * 1.5);//x:1.5, z:1.5
 
@@ -340,9 +340,9 @@ impl Application for MyApp {
             sy:0.0,
             sz:0.0,
             sphere_r:SPHERE_RADIUS,
-            stiffness:80.0,
+            stiffness:100.0,
             mass:1.0,//1
-            damping_factor:0.2,
+            damping_factor:0.1,
 
         }; 
 
